@@ -10,6 +10,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- 方案 A：優雅律動天平 APP 圖標直接內嵌（手機加入主畫面自動識別，免下載圖檔） -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRBIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjRkJGOUY2Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRUZFQkU0Ii8+PC9saW5lYXJHcmFkaWVudD48bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVHcmFkQSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNEM0EzQTMiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNCOEMwQjciLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0idXJsKCNiZ0dyYWRBKSIvPmNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIyMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0U4RDNEMyIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtZGFzaGFycmF5PSIxNSAxMCIgb3BhY2l0eT0iMC42Ii8+PHBhdGggZD0iTSAxMDAgMjU2IEMgMTgwIDI1NiwgMTYwIDE0MCwgMjU2IDE0MCBDIDM1MiAxNTAsIDMzMiAyNTYsIDQxMiAyNTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNsaW5lR3JhZEEpIiBzdHJva2Utd2lkdGg9IjI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNIDEwMCAyNTYgQyAxODAgMjU2LCAyMDAgMzcyLCAyNTYgMzcyIEMgMzEyIDM3MiwgMzMyIDI1NiwgNDEyIDI1NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjQjhDMEI3IiBzdHJva2Utd2lkdGg9IjE2IiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHT9IjAuNyIvPjxwYXRoIGQ9Ik0gMjU2IDcwIEwgMjYyIDkwIEwgMjgyIDk2IEwgMjYyIDEwMiBMIDI1NiAxMjIgTCAyNTAgMTAyIEwgMjMwIDk2IEwgMjUwIDkwIFoiIGZpbGw9IiNEM0EzQTMiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjE4IiBmaWxsPSIjRDNBM0EzIi8+PC9zdmc+">
+
     <style>
         :root {
             --morandi-pink: #D4A3A3;
@@ -122,7 +126,7 @@
             </div>
         </div>
 
-        <!-- 搬移至最底部：備忘錄資料備份安全區塊 -->
+        <!-- 備忘錄資料備份安全區塊 -->
         <div class="satin-card rounded-2xl p-4 flex justify-between items-center bg-white/40">
             <span class="text-xs font-medium opacity-60">🔐 備份與防丟安全區</span>
             <div class="flex space-x-2">
@@ -146,7 +150,6 @@
         let diffChart = null;
         let currentDisplayRange = 7;
 
-        // 升級版：符合時間差生理學的智慧分析引擎
         function generateInsight(currentItem, nextItem) {
             let goodFoods = [];
             let badFoods = [];
@@ -172,7 +175,6 @@
             for (let key in goodKeywords) { if (textToAnalyze.includes(key)) goodFoods.push(goodKeywords[key]); }
             for (let key in badKeywords) { if (textToAnalyze.includes(key)) badFoods.push(badKeywords[key]); }
 
-            // 跨天代謝率計算：當天晚上的體重 - 隔天早上的體重
             let diff = null;
             if (currentItem.bedtime !== null && nextItem && nextItem.morning !== null) {
                 diff = parseFloat((currentItem.bedtime - nextItem.morning).toFixed(2));
