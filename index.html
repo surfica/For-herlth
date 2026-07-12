@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>優雅日常｜體重與飲食隨手記</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- 引入 Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        /* 訂製莫蘭迪與緞光白、綢緞質感的細節樣式 */
+        :root {
+            --morandi-pink: #D4A3A3;      /* 莫蘭迪乾燥粉 */
+            --morandi-pink-light: #E8D3D3;/* 淺莫蘭迪粉 */
+            --morandi-ash: #B8C0B7;       /* 莫蘭迪灰綠藍調 */
+            --morandi-dark: #6E6565;      /* 莫蘭迪深炭灰（文字用） */
+        }
+        
+        /* 綢緞質感：微幅的絲綢光澤漸層 */
+        .satin-bg {
+            background: linear-gradient(135deg, #FBF9F6 0%, #F5F1EB 50%, #EFEBE4 100%);
+        }
+
+        /* 緞光白卡片：像絲綢折射一樣帶有珍珠般的細緻陰影與柔白 */
+        .satin-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 
+                0 4px 15px -3px rgba(212, 163, 163, 0.1),
+                0 10px 30px -5px rgba(110, 101, 101, 0.05),
+                inset 0 1px 3px rgba(255, 255, 255, 0.8);
+        }
+
+        /* 輸入框的莫蘭迪粉色微光焦點 */
+        .morandi-input:focus {
+            outline: none;
+            border-color: var(--morandi-pink);
+            box-shadow: 0 0 0 3px rgba(212, 163, 163, 0.2);
+        }
+    </style>
+</head>
+<body class="satin-bg text-stone-700 min-h-screen pb-12 font-sans antialiased" style="color: var(--morandi-dark);">
+
+    <div class="max-w-md mx-auto p-5">
+        <!-- 標頭 -->
+        <header class="text-center my-6">
+            <h1 class="text-2xl font-light tracking-wide" style="color: var(--morandi-pink); font-weight: 600;">優雅日常 ‧ 體重飲食日記</h1>
+            <p class="text-xs mt-1.5 opacity-60 tracking-widest">在溫柔的節奏中，傾聽身體的聲音</p>
+        </header>
+
+        <!-- 區塊一：折線圖 -->
+        <div class="satin-card rounded-3xl p-5 mb-6">
+            <h2 class="text-xs font-medium tracking-wider opacity-60 mb-3">📊 體重趨勢狀況 (睡前 vs 隔天早上)</h2>
+            <div class="w-full h-48">
+                <canvas id="weightChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 區塊二：數據輸入表單 -->
+        <div class="satin-card rounded-3xl p-6 mb-6">
+            <h2 class="text-base font-medium mb-4 tracking-wide" style="color: var(--morandi-pink);">✍️ 紀錄今日步伐</h2>
+            
+            <form id="logForm" class="space-y-4">
+                <!-- 日期 -->
+                <div>
+                    <label class="block text-xs opacity-60 mb-1 tracking-wider">選擇日期</label>
+                    <input type="date" id="dateInput" class="morandi-input w-full px-3 py-2.5 border border-stone-200 rounded-2xl bg-white/60 text-sm" required>
+                </div>
+
+                <!-- 體重輸入 -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs opacity-60 mb-1 tracking-wider">睡前體重 (kg)</label>
+                        <input type="number" id="bedtimeWeight" step="0.1" placeholder="0.0" class="morandi-input w-full px-3 py-2.5 border border-stone-200 rounded-2xl bg-white/60 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs opacity-60 mb-1 tracking-wider">隔天早起 (kg)</label>
+                        <input type="number" id="morningWeight" step="0.1" placeholder="0.0" class="morandi-input w-full px-3 py-2.5 border border-stone-200 rounded-2xl bg-white/60 text-sm">
+                    </div>
+                </div>
+
+                <!-- 飲食與零食 -->
+                <div>
+                    <label class="block text-xs opacity-60 mb-1 tracking-wider">今日飲食與點心隨手記</label>
+                    <textarea id="dietInput" rows="2" placeholder="隨時記錄... 點心吃了什麼？心情如何？" class="morandi-input w-full px-3 py-2.5 border border-stone-200 rounded-2xl bg-white/60 text-sm"></textarea>
+                </div>
+
+                <!-- 心情感受 -->
+                <div>
+                    <label class="block text-xs opacity-60 mb-1 tracking-wider">當下的身體感受</label>
+                    <input type="text" id="feelingInput" placeholder="例：今天心情很放鬆，稍微有點水腫" class="morandi-input w-full px-3 py-2.5 border border-stone-200 rounded-2xl bg-white/60 text-sm">
+                </div>
+
+                <!-- 儲存按鈕 -->
+                <button type="submit" class="w-full text-white font-medium py-3 rounded-2xl transition tracking-widest shadow-md cursor-pointer duration-300" 
+                        style="background-color: var(--morandi-pink); box-shadow: 0 4px 10px rgba(212, 163, 163, 0.4);"
+                        onmouseover="this.style.backgroundColor='#C29292'" 
+                        onmouseout="this.style.backgroundColor='var(--morandi-pink)'">
+                    儲存日記
+                </button>
+            </form>
+        </div>
+
+        <!-- 區塊三：歷史紀錄清單 -->
+        <div>
+            <h2 class="text-xs font-medium tracking-wider opacity-60 mb-3 px-1">📋 歷史隨筆一覽</h2>
+            <div id="historyList" class="space-y-4">
+                <!-- 由 JS 自動生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 核心邏輯 JavaScript -->
+    <script>
+        document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+
+        let appData = JSON.parse(localStorage.getItem('weightDietLog')) || [];
+        let weightChart = null;
+
+        document.getElementById('logForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('dateInput').value;
+            const bedtime = parseFloat(document.getElementById('bedtimeWeight').value) || null;
+            const morning = parseFloat(document.getElementById('morningWeight').value) || null;
+            const diet = document.getElementById('dietInput').value;
+            const feeling = document.getElementById('feelingInput').value;
+
+            const existingIndex = appData.findIndex(item => item.date === date);
+            const logEntry = { date, bedtime, morning, diet, feeling };
+
+            if (existingIndex > -1) {
+                appData[existingIndex] = logEntry;
+            } else {
+                appData.push(logEntry);
+            }
+
+            appData.sort((a, b) => new Date(a.date) - new Date(b.date));
+            localStorage.setItem('weightDietLog', JSON.stringify(appData));
+
+            updateChart();
+            renderHistory();
+
+            document.getElementById('bedtimeWeight').value = '';
+            document.getElementById('morningWeight').value = '';
+            document.getElementById('dietInput').value = '';
+            document.getElementById('feelingInput').value = '';
+        });
+
+        function deleteLog(index) {
+            if(confirm('確定要刪除這筆優雅的紀錄嗎？')) {
+                appData.splice(index, 1);
+                localStorage.setItem('weightDietLog', JSON.stringify(appData));
+                updateChart();
+                renderHistory();
+            }
+        }
+
+        function renderHistory() {
+            const listContainer = document.getElementById('historyList');
+            listContainer.innerHTML = '';
+
+            if (appData.length === 0) {
+                listContainer.innerHTML = `<p class="text-xs opacity-40 text-center py-6 tracking-wide">靜待第一筆日常紀錄...</p>`;
+                return;
+            }
+
+            [...appData].reverse().forEach((item, revIndex) => {
+                const originalIndex = appData.length - 1 - revIndex;
+                const weightDiff = (item.bedtime && item.morning) ? (item.morning - item.bedtime).toFixed(1) : null;
+                const diffText = weightDiff ? ` (晨間代謝: ${weightDiff > 0 ? '+' : ''}${weightDiff} kg)` : '';
+
+                const card = document.createElement('div');
+                card.className = "satin-card p-5 rounded-2xl relative border-l-4";
+                card.style.borderLeftColor = "var(--morandi-pink)";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2.5">
+                        <span class="text-xs font-bold tracking-wider" style="color: var(--morandi-pink);">${item.date}</span>
+                        <button onclick="deleteLog(${originalIndex})" class="text-xs opacity-40 hover:opacity-100 hover:text-red-500 transition cursor-pointer">隱藏</button>
+                    </div>
+                    <div class="text-xs space-y-2 leading-relaxed opacity-90">
+                        <p><strong class="opacity-70 font-medium">⚖️ 體重脈絡：</strong> 睡前: ${item.bedtime || '--'} kg ‧ 早上: ${item.morning || '--'} kg <span class="font-medium" style="color: #A38282;">${diffText}</span></p>
+                        <p><strong class="opacity-70 font-medium">🍳 飲食隨筆：</strong> ${item.diet || '今日未有飲食點心註記'}</p>
+                        <p><strong class="opacity-70 font-medium">💭 身體感受：</strong> ${item.feeling || '今日身體感到平靜'}</p>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            
+            const labels = appData.map(item => item.date.slice(5));
+            const bedtimeData = appData.map(item => item.bedtime);
+            const morningData = appData.map(item => item.morning);
+
+            if (weightChart) {
+                weightChart.destroy();
+            }
+
+            weightChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '睡前體重',
+                            data: bedtimeData,
+                            borderColor: '#D4A3A3', // 莫蘭迪粉
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#D4A3A3',
+                            pointRadius: 3,
+                            tension: 0.3,
+                            spanGaps: true
+                        },
+                        {
+                            label: '隔天清晨',
+                            data: morningData,
+                            borderColor: '#B8C0B7', // 莫蘭迪灰綠
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#B8C0B7',
+                            pointRadius: 3,
+                            tension: 0.3,
+                            spanGaps: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'top', 
+                            labels: { boxWidth: 8, font: { size: 10 }, color: '#6E6565' } 
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            ticks: { font: { size: 9 }, color: '#A09696' }, 
+                            grid: { color: 'rgba(110, 101, 101, 0.05)' } 
+                        },
+                        x: { 
+                            ticks: { font: { size: 9 }, color: '#A09696' }, 
+                            grid: { display: false } 
+                        }
+                    }
+                }
+            });
+        }
+
+        updateChart();
+        renderHistory();
+    </script>
+</body>
+</html>
