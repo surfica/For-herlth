@@ -34,6 +34,11 @@
             border-color: var(--morandi-pink);
             box-shadow: 0 0 0 3px rgba(212, 163, 163, 0.2);
         }
+        .range-btn.active {
+            background-color: var(--morandi-pink);
+            color: white;
+            border-color: var(--morandi-pink);
+        }
     </style>
 </head>
 <body class="satin-bg text-stone-700 min-h-screen pb-12 font-sans antialiased" style="color: var(--morandi-dark);">
@@ -42,20 +47,27 @@
         <!-- 標頭 -->
         <header class="text-center my-6">
             <h1 class="text-2xl font-light tracking-wide" style="color: var(--morandi-pink); font-weight: 600;">優雅日常 ‧ 智慧飲食日記</h1>
-            <p class="text-xs mt-1.5 opacity-60 tracking-widest">在溫柔的節奏中，傾聽身體的聲音，做一個健康美麗的人</p>
+            <p class="text-xs mt-1.5 opacity-60 tracking-wider">在溫柔的節奏中，傾聽身體的聲音，做一個健康美麗的人</p>
         </header>
 
         <!-- 區塊一：雙圖表可視化面板 -->
-        <div class="satin-card rounded-3xl p-5 mb-6 space-y-6">
+        <div class="satin-card rounded-3xl p-5 mb-6 space-y-4">
+            <!-- 時間範圍篩選按鈕 -->
+            <div class="flex justify-end space-x-1.5 text-[11px]">
+                <button onclick="changeRange(7)" id="btn-7" class="range-btn active px-2.5 py-1 rounded-lg border border-stone-300 text-stone-500 transition cursor-pointer">7天</button>
+                <button onclick="changeRange(30)" id="btn-30" class="range-btn px-2.5 py-1 rounded-lg border border-stone-300 text-stone-500 transition cursor-pointer">30天</button>
+                <button onclick="changeRange(0)" id="btn-0" class="range-btn px-2.5 py-1 rounded-lg border border-stone-300 text-stone-500 transition cursor-pointer">全部</button>
+            </div>
+
             <div>
                 <h2 class="text-xs font-medium tracking-wider opacity-60 mb-2">📊 體重 (昨晚 vs 今早)</h2>
                 <div class="w-full h-40">
                     <canvas id="weightChart"></canvas>
                 </div>
             </div>
-            <div class="border-t border-stone-200/50 my-2"></div>
+            <div class="border-t border-stone-200/50 my-1"></div>
             <div>
-                <h2 class="text-xs font-medium tracking-wider opacity-60 mb-2">✨ 過夜代謝水份排空量 (kg)</h2>
+                <h2 class="text-xs font-medium tracking-wider opacity-60 mb-2">✨ 過夜代謝水份排空量</h2>
                 <div class="w-full h-32">
                     <canvas id="diffChart"></canvas>
                 </div>
@@ -102,8 +114,16 @@
             </form>
         </div>
 
-        <!-- 新增：備忘錄資料備份安全區塊 -->
-        <div class="satin-card rounded-2xl p-4 mb-6 flex justify-between items-center bg-white/40">
+        <!-- 區塊三：歷史紀錄清單 -->
+        <div class="mb-6">
+            <h2 class="text-xs font-medium tracking-wider opacity-60 mb-3 px-1">📋 歷史隨筆與分析一覽</h2>
+            <div id="historyList" class="space-y-4">
+                <!-- 由 JS 自動生成 -->
+            </div>
+        </div>
+
+        <!-- 搬移至最底部：備忘錄資料備份安全區塊 -->
+        <div class="satin-card rounded-2xl p-4 flex justify-between items-center bg-white/40">
             <span class="text-xs font-medium opacity-60">🔐 備份與防丟安全區</span>
             <div class="flex space-x-2">
                 <button onclick="exportData()" class="text-xs px-3 py-1.5 rounded-xl border transition cursor-pointer" style="color: var(--morandi-pink); border-color: var(--morandi-pink); background-color: rgba(255,255,255,0.6);">
@@ -115,13 +135,6 @@
             </div>
         </div>
 
-        <!-- 區塊三：歷史紀錄清單 -->
-        <div>
-            <h2 class="text-xs font-medium tracking-wider opacity-60 mb-3 px-1">📋 歷史隨筆與分析一覽</h2>
-            <div id="historyList" class="space-y-4">
-                <!-- 由 JS 自動生成 -->
-            </div>
-        </div>
     </div>
 
     <!-- 核心邏輯 JavaScript -->
@@ -131,19 +144,22 @@
         let appData = JSON.parse(localStorage.getItem('weightDietLog')) || [];
         let weightChart = null;
         let diffChart = null;
+        let currentDisplayRange = 7;
 
-        // 智慧分析核心引擎
-        function generateInsight(diet, feeling, diff) {
+        // 升級版：符合時間差生理學的智慧分析引擎
+        function generateInsight(currentItem, nextItem) {
             let goodFoods = [];
             let badFoods = [];
             let advice = "";
             let status = "neutral";
 
+            const diet = currentItem.diet || '';
+            const feeling = currentItem.feeling || '';
             const textToAnalyze = (diet + " " + feeling).toLowerCase();
 
             const goodKeywords = {
                 '水': '補充足夠水分', '清淡': '清淡飲食', '原型': '原型食物', '蔬菜': '高纖蔬菜', 
-                '菜': '膳死纖維', '魚': '優質蛋白質', '雞肉': '低脂優質蛋白', '蛋': '優質蛋白質', 
+                '菜': '膳食纖維', '魚': '優質蛋白質', '雞肉': '低脂優質蛋白', '蛋': '優質蛋白質', 
                 '芭樂': '高鉀水果', '番茄': '抗氧化食材', '沙拉': '輕食低負擔'
             };
 
@@ -156,52 +172,62 @@
             for (let key in goodKeywords) { if (textToAnalyze.includes(key)) goodFoods.push(goodKeywords[key]); }
             for (let key in badKeywords) { if (textToAnalyze.includes(key)) badFoods.push(badKeywords[key]); }
 
+            // 跨天代謝率計算：當天晚上的體重 - 隔天早上的體重
+            let diff = null;
+            if (currentItem.bedtime !== null && nextItem && nextItem.morning !== null) {
+                diff = parseFloat((currentItem.bedtime - nextItem.morning).toFixed(2));
+            }
+
             if (diff !== null) {
                 if (diff >= 0.6) {
                     status = "good";
-                    advice = "✨ 太棒了！昨晚的過夜代謝非常高效（減少 " + diff + "kg）。" + 
-                             (goodFoods.length > 0 ? "昨天的【" + goodFoods.join('、') + "】對你的身體而言是「高效代謝安全餐」，請好好記住這個舒服的飲食組合！" : "昨天的飲食安排對身體十分友善，請繼續保持這個節奏。");
+                    advice = "✨ 太棒了！今天的飲食經過一整夜，帶動了高效代謝（昨晚至明早排空了 " + diff + "kg）。" + 
+                             (goodFoods.length > 0 ? "妳今天攝取的【" + goodFoods.join('、') + "】是妳的「高效代謝安全餐」，身體非常喜歡！" : "今天的飲食安排對身體十分友善，請繼續保持這個溫柔的節奏。");
                 } else if (diff < 0.4) {
                     status = "burden";
-                    advice = "⏳ 昨晚的過夜代謝稍微緩慢（僅減少 " + diff + "kg）。" + 
-                             (badFoods.length > 0 ? "昨天的【" + badFoods.join('、') + "】可能讓身體攝取了過多的鈉或精緻糖，導致水分滯留。" : "昨晚身體可能在悄悄水腫。") + 
-                             "建議今天白天多喝水排鈉，或吃點香蕉、奇異果等高鉀水果來幫助身體排空。";
+                    advice = "⏳ 昨晚到今早的過夜代謝稍微緩慢（僅排空 " + diff + "kg）。" + 
+                             (badFoods.length > 0 ? "看來今天吃進去的【" + badFoods.join('、') + "】含有較多的鈉或精緻糖，在夜裡悄悄鎖住了水分。" : "今天的飲食可能對妳目前的消化稍微造成了負擔。") + 
+                             "建議明天白天多喝水排鈉，或吃點香蕉、紅豆水等高鉀食物來加速身體排空。";
                 } else {
                     if (badFoods.length > 0) {
                         status = "burden";
-                        advice = "🌿 雖然過夜代謝尚在正常範圍，但昨天點記的【" + badFoods.join('、') + "】屬於隱形負擔食物。如果連續幾天吃，可能會讓代謝漸漸卡關喔，今天稍微清淡一些吧！";
+                        advice = "🌿 雖然過夜排空量在正常範圍（減少 " + diff + "kg），但今天隨手記的【" + badFoods.join('、') + "】屬於隱形負擔食物。如果連續幾天吃，代謝可能會漸漸卡關喔。";
                     } else if (goodFoods.length > 0) {
                         status = "good";
-                        advice = "🌸 身體運作得很平穩。昨天攝取的【" + goodFoods.join('、') + "】給予了身體很好的基礎支撐，繼續傾聽身體的聲音。";
+                        advice = "🌸 身體運作得很平穩（減少 " + diff + "kg）。今天攝取的【" + goodFoods.join('、') + "】給予了身體很好的基礎支撐，繼續傾聽內心的聲音。";
                     } else {
-                        advice = "🤍 昨晚的代謝表現很平穩。今天可以多觀察看看不同的點心或晚餐，會對過夜代謝產生什麼樣的有趣變化。";
+                        advice = "🤍 昨晚到明早的排空表現很平穩（減少 " + diff + "kg）。明天可以多觀察看看不同的飲食，會對過夜代謝產生什麼有趣的變化。";
                     }
                 }
             } else {
                 if (badFoods.length > 0) {
-                    status = "burden";
-                    advice = "🔍 註記中出現了【" + badFoods.join('、') + "】，這類食物容易引發隔天水腫。建議記得補填明早體重，觀察看看長條圖的變化喔。";
+                    status = "neutral";
+                    advice = "⏳ 紀錄已儲存。今天點記了【" + badFoods.join('、') + "】，這類重口味或高糖食物容易引發水腫。等明天早上補上體重後，我們就能精準揭曉它對妳身體的影響囉！";
                 } else if (goodFoods.length > 0) {
-                    status = "good";
-                    advice = "🌱 捕捉到身體喜歡的【" + goodFoods.join('、') + "】！期待你明早的體重表現，這通常是身體輕盈的開端。";
+                    status = "neutral";
+                    advice = "🌱 捕捉到身體喜歡的原型食材【" + goodFoods.join('、') + "】！等明天補上體重數據，就能連連看這道高效代謝餐的真實威力囉。";
                 } else {
-                    advice = "✍️ 紀錄已儲存。每一天的隨筆，都是更了解自己身體的珍貴線索。";
+                    advice = "✍️ 紀錄已儲存。等明天早上補上體重後，就會跳出今天飲食的精準跨天代謝分析喔！";
                 }
             }
 
             return { status, advice };
         }
 
-        // 📥 備份匯出：把資料變成一個文字檔案下載
+        function changeRange(days) {
+            currentDisplayRange = days;
+            document.querySelectorAll('.range-btn').forEach(btn => btn.classList.remove('active'));
+            if(days === 7) document.getElementById('btn-7').classList.add('active');
+            if(days === 30) document.getElementById('btn-30').classList.add('active');
+            if(days === 0) document.getElementById('btn-0').classList.add('active');
+            updateCharts();
+        }
+
         function exportData() {
-            if(appData.length === 0) {
-                alert('目前還沒有數據可以匯出備份喔！');
-                return;
-            }
+            if(appData.length === 0) { alert('目前還沒有數據可以匯出備份喔！'); return; }
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            
             const today = new Date().toISOString().split('T')[0];
             downloadAnchor.setAttribute("download", `體重飲食日記備份_${today}.json`);
             document.body.appendChild(downloadAnchor);
@@ -209,41 +235,31 @@
             downloadAnchor.remove();
         }
 
-        // 📤 匯入還原：可以讀取以前下載的檔案還原進來
         function importData() {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
-            
             input.onchange = e => {
                 const file = e.target.files[0];
                 const reader = new FileReader();
                 reader.readAsText(file, 'UTF-8');
-                
                 reader.onload = readerEvent => {
                     try {
                         const content = JSON.parse(readerEvent.target.result);
                         if (Array.isArray(content)) {
                             if(confirm('匯入備份檔案將會合併您目前的現有數據，確定要繼續嗎？')) {
-                                // 合併並去重（相同日期以新的為主）
                                 let mergedMap = new Map();
                                 appData.forEach(item => mergedMap.set(item.date, item));
                                 content.forEach(item => mergedMap.set(item.date, item));
-                                
                                 appData = Array.from(mergedMap.values());
                                 appData.sort((a, b) => new Date(a.date) - new Date(b.date));
-                                
                                 localStorage.setItem('weightDietLog', JSON.stringify(appData));
                                 updateCharts();
                                 renderHistory();
                                 alert('🎉 資料還原成功！圖表與紀錄已更新。');
                             }
-                        } else {
-                            alert('格式不正確，這好像不是正確的備份檔案。');
-                        }
-                    } catch (err) {
-                        alert('讀取檔案失敗，請確保選取的是正確的備份 .json 檔案。');
-                    }
+                        } else { alert('格式不正確，這好像不是正確的備份檔案。'); }
+                    } catch (err) { alert('讀取檔案失敗，請確保選取的是正確的備份 .json 檔案。'); }
                 }
             }
             input.click();
@@ -294,10 +310,12 @@
 
             [...appData].reverse().forEach((item, revIndex) => {
                 const originalIndex = appData.length - 1 - revIndex;
-                const weightDiff = (item.bedtime && item.morning) ? (item.bedtime - item.morning) : null;
-                const diffText = weightDiff !== null ? ` (過夜排空: -${weightDiff.toFixed(2)} kg)` : '';
+                const nextItem = appData[originalIndex + 1] || null;
+                
+                const singleDayDiff = (item.bedtime && item.morning) ? (item.bedtime - item.morning) : null;
+                const diffText = singleDayDiff !== null ? ` (昨晚至當晨排空: -${singleDayDiff.toFixed(2)} kg)` : '';
 
-                const insight = generateInsight(item.diet || '', item.feeling || '', weightDiff);
+                const insight = generateInsight(item, nextItem);
                 
                 let badgeStyle = "background-color: #E2E8F0; color: #475569;";
                 let badgeText = "日常札記";
@@ -325,12 +343,12 @@
                         <button onclick="deleteLog(${originalIndex})" class="text-xs opacity-40 hover:opacity-100 hover:text-red-500 transition cursor-pointer">隱藏</button>
                     </div>
                     <div class="text-xs space-y-2 leading-relaxed opacity-90 border-b border-stone-200/40 pb-3">
-                        <p><strong class="opacity-70 font-medium">⚖️ 體重數據：</strong> 昨晚: ${item.bedtime !== null ? item.bedtime.toFixed(2) : '--'} kg ‧ 今早: ${item.morning !== null ? item.morning.toFixed(2) : '--'} kg <span class="font-medium" style="color: #A38282;">${diffText}</span></p>
+                        <p><strong class="opacity-70 font-medium">⚖️ 體重數據：</strong> 昨晚: ${item.bedtime !== null ? item.bedtime.toFixed(2) : '--'} kg ‧ 今早: ${item.morning !== null ? item.morning.toFixed(2) : '--'} kg <span class="text-[11px] font-medium opacity-60">${diffText}</span></p>
                         <p><strong class="opacity-70 font-medium">🍳 飲食隨筆：</strong> ${item.diet || '今日未有飲食點心註記'}</p>
                         <p><strong class="opacity-70 font-medium">💭 感受備忘：</strong> ${item.feeling || '今日身體感到平靜'}</p>
                     </div>
                     <div class="mt-3 text-xs leading-relaxed p-2.5 rounded-xl bg-stone-50/50" style="color: #5C5555;">
-                        <span class="font-bold text-[10px] uppercase tracking-wider block mb-1 opacity-60">💡 智慧體檢意見：</span>
+                        <span class="font-bold text-[10px] uppercase tracking-wider block mb-1 opacity-60">💡 跨天飲食體檢：</span>
                         ${insight.advice}
                     </div>
                 `;
@@ -339,17 +357,27 @@
         }
 
         function updateCharts() {
-            const labels = appData.map(item => item.date.slice(5));
-            const bedtimeData = appData.map(item => item.bedtime);
-            const morningData = appData.map(item => item.morning);
+            let filteredData = [...appData];
+            if (currentDisplayRange > 0 && appData.length > currentDisplayRange) {
+                filteredData = appData.slice(-currentDisplayRange);
+            }
+
+            const labels = filteredData.map(item => item.date.slice(5));
+            const bedtimeData = filteredData.map(item => item.bedtime);
+            const morningData = filteredData.map(item => item.morning);
             
-            const diffData = appData.map(item => {
-                if (item.bedtime && item.morning) {
-                    const diff = item.bedtime - item.morning;
+            const diffData = filteredData.map((item, idx) => {
+                const currentGlobalIdx = appData.findIndex(g => g.date === item.date);
+                const nextGlobalItem = appData[currentGlobalIdx + 1];
+                
+                if (item.bedtime !== null && nextGlobalItem && nextGlobalItem.morning !== null) {
+                    const diff = item.bedtime - nextGlobalItem.morning;
                     return diff > 0 ? parseFloat(diff.toFixed(2)) : 0;
                 }
                 return null;
             });
+
+            const isLongRange = filteredData.length > 15;
 
             const ctxWeight = document.getElementById('weightChart').getContext('2d');
             if (weightChart) weightChart.destroy();
@@ -365,7 +393,7 @@
                             backgroundColor: 'transparent',
                             borderWidth: 2,
                             pointBackgroundColor: '#D4A3A3',
-                            pointRadius: 2.5,
+                            pointRadius: isLongRange ? 1 : 2.5,
                             tension: 0.3,
                             spanGaps: true
                         },
@@ -376,7 +404,7 @@
                             backgroundColor: 'transparent',
                             borderWidth: 2,
                             pointBackgroundColor: '#B8C0B7',
-                            pointRadius: 2.5,
+                            pointRadius: isLongRange ? 1 : 2.5,
                             tension: 0.3,
                             spanGaps: true
                         }
@@ -388,7 +416,7 @@
                     plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 8, font: { size: 10 } } } },
                     scales: {
                         y: { ticks: { font: { size: 9 }, color: '#A09696' }, grid: { color: 'rgba(110, 101, 101, 0.05)' } },
-                        x: { ticks: { font: { size: 9 }, color: '#A09696' }, grid: { display: false } }
+                        x: { ticks: { font: { size: 9 }, color: '#A09696', maxTicksLimit: 8 }, grid: { display: false } }
                     }
                 }
             });
@@ -400,13 +428,13 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: '減少公斤數',
+                        label: '當日飲食之過夜代謝量',
                         data: diffData,
                         backgroundColor: 'rgba(212, 163, 163, 0.6)',
                         borderColor: '#D4A3A3',
                         borderWidth: 1,
                         borderRadius: 4,
-                        barPercentage: 0.5
+                        barPercentage: isLongRange ? 0.7 : 0.5
                     }]
                 },
                 options: {
@@ -414,12 +442,8 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { 
-                            beginAtZero: true,
-                            ticks: { font: { size: 9 }, color: '#A09696' }, 
-                            grid: { color: 'rgba(110, 101, 101, 0.03)' } 
-                        },
-                        x: { ticks: { font: { size: 9 }, color: '#A09696' }, grid: { display: false } }
+                        y: { beginAtZero: true, ticks: { font: { size: 9 }, color: '#A09696' }, grid: { color: 'rgba(110, 101, 101, 0.03)' } },
+                        x: { ticks: { font: { size: 9 }, color: '#A09696', maxTicksLimit: 8 }, grid: { display: false } }
                     }
                 }
             });
