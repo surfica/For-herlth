@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>芸｜體重與飲食隨手記</title>
+    <title>芸｜智慧體重飲食日記</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- 引入 Chart.js -->
@@ -41,24 +41,19 @@
     <div class="max-w-md mx-auto p-5">
         <!-- 標頭 -->
         <header class="text-center my-6">
-            <h1 class="text-2xl font-light tracking-wide" style="color: var(--morandi-pink); font-weight: 600;">優雅日常 ‧ 體重飲食日記</h1>
-            <p class="text-xs mt-1.5 opacity-60 tracking-widest">在溫柔的節奏中，傾聽身體的聲音</p>
+            <h1 class="text-2xl font-light tracking-wide" style="color: var(--morandi-pink); font-weight: 600;">優雅日常 ‧ 智慧飲食日記</h1>
+            <p class="text-xs mt-1.5 opacity-60 tracking-widest">在溫柔的節奏中，傾聽身體的聲音，當一個健康又美麗的人</p>
         </header>
 
         <!-- 區塊一：雙圖表可視化面板 -->
         <div class="satin-card rounded-3xl p-5 mb-6 space-y-6">
-            <!-- 體重折線圖 -->
             <div>
                 <h2 class="text-xs font-medium tracking-wider opacity-60 mb-2">📊 體重趨勢狀況 (昨晚 vs 今早)</h2>
                 <div class="w-full h-40">
                     <canvas id="weightChart"></canvas>
                 </div>
             </div>
-            
-            <!-- 分隔線 -->
             <div class="border-t border-stone-200/50 my-2"></div>
-
-            <!-- 代謝長條圖 -->
             <div>
                 <h2 class="text-xs font-medium tracking-wider opacity-60 mb-2">✨ ✨ 過夜代謝水份排空量 (kg)</h2>
                 <div class="w-full h-32">
@@ -69,16 +64,14 @@
 
         <!-- 區塊二：數據輸入表單 -->
         <div class="satin-card rounded-3xl p-6 mb-6">
-            <h2 class="text-base font-medium mb-4 tracking-wide" style="color: var(--morandi-pink);">✍️ 紀錄今日步伐</h2>
+            <h2 class="text-base font-medium mb-4 tracking-wide" style="color: var(--morandi-pink);">✍️ 紀錄今日數據</h2>
             
             <form id="logForm" class="space-y-4">
-                <!-- 日期 -->
                 <div>
                     <label class="block text-xs opacity-60 mb-1 tracking-wider">選擇日期</label>
                     <input type="date" id="dateInput" class="morandi-input w-full px-3 py-2.5 border border-stone-200 rounded-2xl bg-white/60 text-sm" required>
                 </div>
 
-                <!-- 體重輸入 -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs opacity-60 mb-1 tracking-wider">昨晚體重 (kg)</label>
@@ -90,31 +83,28 @@
                     </div>
                 </div>
 
-                <!-- 飲食與零食 -->
                 <div>
                     <label class="block text-xs opacity-60 mb-1 tracking-wider">今日飲食與點心隨手記</label>
                     <textarea id="dietInput" rows="2" placeholder="隨時記錄... 早餐、午餐或零食吃了什麼？" class="morandi-input w-full px-3 py-2.5 border border-stone-200 rounded-2xl bg-white/60 text-sm"></textarea>
                 </div>
 
-                <!-- 心情感受 -->
                 <div>
                     <label class="block text-xs opacity-60 mb-1 tracking-wider">當下的身體與心情感受</label>
-                    <input type="text" id="feelingInput" placeholder="例：沒吃早餐，下午吃了甜點感受很好" class="morandi-input w-full px-3 py-2.5 border border-stone-200 rounded-2xl bg-white/60 text-sm">
+                    <input type="text" id="feelingInput" placeholder="例：心情放鬆，稍微有點水腫" class="morandi-input w-full px-3 py-2.5 border border-stone-200 rounded-2xl bg-white/60 text-sm">
                 </div>
 
-                <!-- 儲存按鈕 -->
                 <button type="submit" class="w-full text-white font-medium py-3 rounded-2xl transition tracking-widest shadow-md cursor-pointer duration-300" 
                         style="background-color: var(--morandi-pink); box-shadow: 0 4px 10px rgba(212, 163, 163, 0.4);"
                         onmouseover="this.style.backgroundColor='#C29292'" 
                         onmouseout="this.style.backgroundColor='var(--morandi-pink)'">
-                    儲存日記
+                    儲存日記並分析
                 </button>
             </form>
         </div>
 
         <!-- 區塊三：歷史紀錄清單 -->
         <div>
-            <h2 class="text-xs font-medium tracking-wider opacity-60 mb-3 px-1">📋 歷史隨筆一覽</h2>
+            <h2 class="text-xs font-medium tracking-wider opacity-60 mb-3 px-1">📋 歷史隨筆與分析一覽</h2>
             <div id="historyList" class="space-y-4">
                 <!-- 由 JS 自動生成 -->
             </div>
@@ -128,6 +118,75 @@
         let appData = JSON.parse(localStorage.getItem('weightDietLog')) || [];
         let weightChart = null;
         let diffChart = null;
+
+        // 智慧分析核心引擎
+        function generateInsight(diet, feeling, diff) {
+            let goodFoods = [];
+            let badFoods = [];
+            let advice = "";
+            let status = "neutral"; // neutral, good, burden
+
+            const textToAnalyze = (diet + " " + feeling).toLowerCase();
+
+            // 關鍵字字典
+            const goodKeywords = {
+                '水': '補充足夠水分', '清淡': '清淡飲食', '原型': '原型食物', '蔬菜': '高纖蔬菜', 
+                '菜': '膳食纖維', '魚': '優質蛋白質', '雞肉': '低脂優質蛋白', '蛋': '優質蛋白質', 
+                '芭樂': '高鉀水果', '番茄': '抗氧化食材', '沙拉': '輕食低負擔'
+            };
+
+            const badKeywords = {
+                '火鍋': '高鈉湯底', '泡麵': '高鹽精緻澱粉', '甜點': '高糖精緻糖', '蛋糕': '精緻高糖油', 
+                '巧克力': '高糖高脂點心', '炸': '高油炸物', '鹽酥雞': '高鈉油脂負擔', '沾醬': '高鈉隱形殺手',
+                '醬': '高鈉調味', '燒肉': '重口味高油脂', '飲料': '精緻果糖', '奶茶': '高糖精緻脂肪'
+            };
+
+            // 掃描關鍵字
+            for (let key in goodKeywords) {
+                if (textToAnalyze.includes(key)) goodFoods.push(goodKeywords[key]);
+            }
+            for (let key in badKeywords) {
+                if (textToAnalyze.includes(key)) badFoods.push(badKeywords[key]);
+            }
+
+            // 綜合判斷 (依據食物與代謝公斤數)
+            if (diff !== null) {
+                if (diff >= 0.6) {
+                    status = "good";
+                    advice = "✨ 太棒了！昨晚的過夜代謝非常高效（排出 " + diff + "kg 水分）。" + 
+                             (goodFoods.length > 0 ? "昨天的【" + goodFoods.join('、') + "】對你的身體而言是「高效代謝安全餐」，請好好記住這個舒服的飲食組合！" : "昨天的飲食安排對身體十分友善，請繼續保持這個節奏。");
+                } else if (diff < 0.4) {
+                    status = "burden";
+                    advice = "⏳ 昨晚的過夜代謝稍微緩慢（僅排出 " + diff + "kg 體液）。" + 
+                             (badFoods.length > 0 ? "昨天的【" + badFoods.join('、') + "】可能讓身體攝取了過多的鈉或精緻糖，導致水分滯留。" : "昨晚身體可能在悄悄水腫。") + 
+                             "建議今天白天多喝水排鈉，或吃點香蕉、奇異果等高鉀水果來幫助身體排空。";
+                } else {
+                    // 代謝正常區間 0.4 ~ 0.59
+                    if (badFoods.length > 0) {
+                        status = "burden";
+                        advice = "🌿 雖然過夜代謝尚在正常範圍，但昨天點記的【" + badFoods.join('、') + "】屬於隱形負擔食物。如果連續幾天吃，可能會讓代謝漸漸卡關喔，今天稍微清淡一些吧！";
+                    } else if (goodFoods.length > 0) {
+                        status = "good";
+                        advice = "🌸 身體運作得很平穩。昨天攝取的【" + goodFoods.join('、') + "】給予了身體很好的基礎支撐，繼續傾聽身體的聲音。";
+                    } else {
+                        advice = "🤍 昨晚的代謝表現很平穩。今天可以多觀察看看不同的點心或晚餐，會對過夜代謝產生什麼樣的有趣變化。";
+                    }
+                }
+            } else {
+                // 資料不齊全時僅依關鍵字判斷
+                if (badFoods.length > 0) {
+                    status = "burden";
+                    advice = "🔍 註記中出現了【" + badFoods.join('、') + "】，這類食物容易引發隔天水腫。建議記得補填明早體重，觀察看看長條圖的變化喔。";
+                } else if (goodFoods.length > 0) {
+                    status = "good";
+                    advice = "🌱 捕捉到身體喜歡的【" + goodFoods.join('、') + "】！期待你明早的體重表現，這通常是身體輕盈的開端。";
+                } else {
+                    advice = "✍️ 紀錄已儲存。每一天的隨筆，都是更了解自己身體的珍貴線索。";
+                }
+            }
+
+            return { status, advice };
+        }
 
         document.getElementById('logForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -179,23 +238,47 @@
 
             [...appData].reverse().forEach((item, revIndex) => {
                 const originalIndex = appData.length - 1 - revIndex;
+                const weightDiff = (item.bedtime && item.morning) ? (item.bedtime - item.morning) : null;
+                const diffText = weightDiff !== null ? ` (過夜排空: -${weightDiff.toFixed(2)} kg)` : '';
+
+                // 產生智慧建議
+                const insight = generateInsight(item.diet || '', item.feeling || '', weightDiff);
                 
-                // 代謝算式調整：昨晚體重 - 今早體重 ＝ 正值的排空量
-                const weightDiff = (item.bedtime && item.morning) ? (item.bedtime - item.morning).toFixed(2) : null;
-                const diffText = weightDiff ? ` (過夜排空: -${weightDiff} kg)` : '';
+                // 依據狀態決定小標籤底色
+                let badgeStyle = "background-color: #E2E8F0; color: #475569;"; // 預設
+                let badgeText = "日常札記";
+                let cardBorderColor = "var(--morandi-pink)";
+
+                if (insight.status === "good") {
+                    badgeStyle = "background-color: #E2ECE9; color: #4A6B5D;"; // 莫蘭迪綠
+                    badgeText = "👍 代謝神隊友";
+                    cardBorderColor = "#B8C0B7";
+                } else if (insight.status === "burden") {
+                    badgeStyle = "background-color: #F5EAE6; color: #9C6656;"; // 莫蘭迪橘紅
+                    badgeText = "⚠️ 身體在負擔";
+                    cardBorderColor = "#D4A3A3";
+                }
 
                 const card = document.createElement('div');
-                card.className = "satin-card p-5 rounded-2xl relative border-l-4";
-                card.style.borderLeftColor = "var(--morandi-pink)";
+                card.className = "satin-card p-5 rounded-2xl relative border-l-4 transition duration-300";
+                card.style.borderLeftColor = cardBorderColor;
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2.5">
-                        <span class="text-xs font-bold tracking-wider" style="color: var(--morandi-pink);">${item.date}</span>
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-bold tracking-wider" style="color: var(--morandi-pink);">${item.date}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-medium" style="${badgeStyle}">${badgeText}</span>
+                        </div>
                         <button onclick="deleteLog(${originalIndex})" class="text-xs opacity-40 hover:opacity-100 hover:text-red-500 transition cursor-pointer">隱藏</button>
                     </div>
-                    <div class="text-xs space-y-2 leading-relaxed opacity-90">
+                    <div class="text-xs space-y-2 leading-relaxed opacity-90 border-b border-stone-200/40 pb-3">
                         <p><strong class="opacity-70 font-medium">⚖️ 體重數據：</strong> 昨晚: ${item.bedtime !== null ? item.bedtime.toFixed(2) : '--'} kg ‧ 今早: ${item.morning !== null ? item.morning.toFixed(2) : '--'} kg <span class="font-medium" style="color: #A38282;">${diffText}</span></p>
                         <p><strong class="opacity-70 font-medium">🍳 飲食隨筆：</strong> ${item.diet || '今日未有飲食點心註記'}</p>
                         <p><strong class="opacity-70 font-medium">💭 感受備忘：</strong> ${item.feeling || '今日身體感到平靜'}</p>
+                    </div>
+                    <!-- 智慧分析區塊 -->
+                    <div class="mt-3 text-xs leading-relaxed p-2.5 rounded-xl bg-stone-50/50" style="color: #5C5555;">
+                        <span class="font-bold text-[10px] uppercase tracking-wider block mb-1 opacity-60">💡 智慧體檢意見：</span>
+                        ${insight.advice}
                     </div>
                 `;
                 listContainer.appendChild(card);
@@ -207,16 +290,14 @@
             const bedtimeData = appData.map(item => item.bedtime);
             const morningData = appData.map(item => item.morning);
             
-            // 計算「昨晚 - 今早」的純代謝掉的重量
             const diffData = appData.map(item => {
                 if (item.bedtime && item.morning) {
                     const diff = item.bedtime - item.morning;
-                    return diff > 0 ? parseFloat(diff.toFixed(2)) : 0; // 若今早反而變重則顯示 0
+                    return diff > 0 ? parseFloat(diff.toFixed(2)) : 0;
                 }
                 return null;
             });
 
-            // 1. 渲染上方的折線圖
             const ctxWeight = document.getElementById('weightChart').getContext('2d');
             if (weightChart) weightChart.destroy();
             weightChart = new Chart(ctxWeight, {
@@ -259,7 +340,6 @@
                 }
             });
 
-            // 2. 渲染下方的代謝量長條圖
             const ctxDiff = document.getElementById('diffChart').getContext('2d');
             if (diffChart) diffChart.destroy();
             diffChart = new Chart(ctxDiff, {
@@ -269,7 +349,7 @@
                     datasets: [{
                         label: '減少公斤數',
                         data: diffData,
-                        backgroundColor: 'rgba(212, 163, 163, 0.6)', // 莫蘭迪粉半透明
+                        backgroundColor: 'rgba(212, 163, 163, 0.6)',
                         borderColor: '#D4A3A3',
                         borderWidth: 1,
                         borderRadius: 4,
@@ -279,7 +359,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }, // 長條圖不需圖例，精簡畫面
+                    plugins: { legend: { display: false } },
                     scales: {
                         y: { 
                             beginAtZero: true,
