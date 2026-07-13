@@ -140,16 +140,7 @@
 
     </div>
 
-    <!-- 核心邏輯 JavaScript -->
-    <script>
-        document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
-
-        let appData = JSON.parse(localStorage.getItem('weightDietLog')) || [];
-        let weightChart = null;
-        let diffChart = null;
-        let currentDisplayRange = 7;
-
-        // 🎯 翻修後的生理邏輯：根據當天的飲食，比對「隔天早上的排空數據」
+// 🎯 修正版生理邏輯：今天白天的飲食，會決定「明天一整天數據裡」的過夜排空表現
         function generateInsight(currentItem, nextItem) {
             let goodFoods = [];
             let badFoods = [];
@@ -169,52 +160,52 @@
             const badKeywords = {
                 '火鍋': '高鈉湯底', '泡麵': '高鹽精緻澱粉', '甜點': '高糖精緻糖', '蛋糕': '精緻高糖油', 
                 '巧克力': '高糖高脂點心', '炸': '高油炸物', '鹽酥雞': '高鈉油脂負擔', '沾醬': '高鈉隱形殺手',
-                '醬': '高鈉調味', '燒肉': '重口味高油脂', '飲料': '精緻果糖', '奶茶': '高糖精緻脂肪'
+                '醬': '高鈉調味', '燒肉': '重口味高油脂', '飲料': '精緻果糖', '奶茶': '高糖精緻脂肪',
+                '披薩': '高油高鹽精緻澱粉'
             };
 
             for (let key in goodKeywords) { if (textToAnalyze.includes(key)) goodFoods.push(goodKeywords[key]); }
             for (let key in badKeywords) { if (textToAnalyze.includes(key)) badFoods.push(badKeywords[key]); }
 
-            // 計算隔天早上的排空量 (當天晚上體重 - 隔天早上體重)
+            // 修正點：隔天的排空表現，應該直接讀取「隔天那一筆紀錄裡獨立計算好」的排空量
             let nextDiff = null;
-            if (currentItem.bedtime !== null && nextItem && nextItem.morning !== null) {
-                nextDiff = parseFloat((currentItem.bedtime - nextItem.morning).toFixed(2));
+            if (nextItem && nextItem.bedtime !== null && nextItem.morning !== null) {
+                nextDiff = parseFloat((nextItem.bedtime - nextItem.morning).toFixed(2));
             }
 
             if (nextDiff !== null) {
                 if (nextDiff >= 0.6) {
                     status = "good";
-                    advice = "✨ 太棒了！這天白天的飲食讓妳在隔天早晨順暢排空了 " + nextDiff + "kg！" + 
+                    advice = "✨ 太棒了！這天白天的飲食讓妳在隔天過夜順暢排空了 " + nextDiff + "kg！" + 
                              (goodFoods.length > 0 ? "其中記錄到的【" + goodFoods.join('、') + "】確實是妳的「高效代謝安全餐」，身體非常喜歡！" : "這樣的日常飲食安排對身體十分友善，請繼續保持。");
                 } else if (nextDiff === 0) {
                     status = "neutral";
-                    advice = "🤍 昨晚與隔天清晨的體重完全一樣。這天記下的飲食讓身體運作得很平穩，多觀察看看白天的水分補充，聽聽身體微小的變化。";
+                    advice = "🤍 隔天過夜的體重完全沒有變動（排空 0kg）。這天記下的飲食讓身體運作得很平穩，多觀察看看水分補充。";
                 } else if (nextDiff < 0.4) {
                     status = "burden";
-                    advice = "⏳ 這天吃完後，導致隔天清晨的過夜代謝稍微緩慢（僅排空 " + nextDiff + "kg）。" + 
+                    advice = "⏳ 這天吃完後，導致隔天過夜代謝稍微緩慢（僅排空 " + nextDiff + "kg）。" + 
                              (badFoods.length > 0 ? "看來隨手記下的【" + badFoods.join('、') + "】含有較多的鈉或精緻糖，悄悄在隔天鎖住了水分。" : "這天的飲食內容可能對隔日的消化稍微造成了負擔。") + 
                              "建議明天白天多喝水排鈉，或吃點香蕉、紅豆水等高鉀食物來幫助身體重新排空。";
                 } else {
                     if (badFoods.length > 0) {
                         status = "burden";
-                        advice = "🌿 雖然隔天早上的排空量在正常範圍（減少 " + nextDiff + "kg），但這天隨手記的【" + badFoods.join('、') + "】屬於隱形負擔食物。如果連續幾天這樣吃，代謝可能會漸漸卡關喔。";
+                        advice = "🌿 雖然隔天過夜排空量在正常範圍（減少 " + nextDiff + "kg），但這天隨手記的【" + badFoods.join('、') + "】屬於隱形負擔食物。如果連續幾天這樣吃，隔日功能可能會漸漸卡關喔。";
                     } else if (goodFoods.length > 0) {
                         status = "good";
-                        advice = "🌸 隔天身體運作得很平穩（減少 " + nextDiff + "kg）。這天攝取的【" + goodFoods.join('、') + "】給予了身體很好的基礎支撐，繼續傾聽內心的聲音。";
+                        advice = "🌸 隔天身體運作得很平穩（減少 " + nextDiff + "kg）。這天攝取的【" + goodFoods.join('、') + "】給予了身體很好的基礎支撐，繼續保持。";
                     } else {
-                        advice = "🤍 昨晚到明晨的排空表現很平穩（減少 " + nextDiff + "kg）。可以多觀察看看不同的飲食，對隔天早上的過夜代謝會產生什麼變化。";
+                        advice = "🤍 隔天過夜的排空表現很平穩（減少 " + nextDiff + "kg）。可以多觀察看看不同的飲食，對隔天早上的過夜代謝會產生什麼變化。";
                     }
                 }
             } else {
-                // 如果還沒有下一天的數據
                 if (badFoods.length > 0) {
                     status = "neutral";
-                    advice = "⏳ 這天點記了【" + badFoods.join('、') + "】等容易引發水腫的重口味或高糖食物。等妳輸入「明早的體重」後，就能精準揭曉它對隔日代謝的真實影響囉！";
+                    advice = "⏳ 這天記錄了【" + badFoods.join('、') + "】等重口味或高糖食物。等妳輸入「明天的完整數據」後，就能精準揭曉它對隔日過夜排空的真實影響囉！";
                 } else if (goodFoods.length > 0) {
                     status = "neutral";
-                    advice = "🌱 捕捉到身體喜歡的原型食材【" + goodFoods.join('、') + "】！等明天早上補齊體重數據，就能連連看這道高效代謝餐對隔日排空的真實威力囉。";
+                    advice = "🌱 捕捉到身體喜歡的原型食材【" + goodFoods.join('\\、') + "】！等明天數據補齊，就能連連看這道餐對隔日排空的真實威力囉。";
                 } else {
-                    advice = "✍️ 紀錄已儲存。記得在明天補上「今早體重」，系統就會精準分析這天飲食對隔天早上的排空影響喔！";
+                    advice = "✍️ 紀錄已儲存。記得在明天補上數據，系統就會精準分析這天飲食對隔天過夜的排空影響喔！";
                 }
             }
 
