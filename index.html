@@ -11,8 +11,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-<link rel="apple-touch-icon" sizes="180x180" href="icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
 
     <style>
         :root {
@@ -149,7 +149,8 @@
         let diffChart = null;
         let currentDisplayRange = 7;
 
-        function generateInsight(currentItem) {
+        // 🎯 翻修後的生理邏輯：根據當天的飲食，比對「隔天早上的排空數據」
+        function generateInsight(currentItem, nextItem) {
             let goodFoods = [];
             let badFoods = [];
             let advice = "";
@@ -174,44 +175,46 @@
             for (let key in goodKeywords) { if (textToAnalyze.includes(key)) goodFoods.push(goodKeywords[key]); }
             for (let key in badKeywords) { if (textToAnalyze.includes(key)) badFoods.push(badKeywords[key]); }
 
-            let diff = null;
-            if (currentItem.bedtime !== null && currentItem.morning !== null) {
-                diff = parseFloat((currentItem.bedtime - currentItem.morning).toFixed(2));
+            // 計算隔天早上的排空量 (當天晚上體重 - 隔天早上體重)
+            let nextDiff = null;
+            if (currentItem.bedtime !== null && nextItem && nextItem.morning !== null) {
+                nextDiff = parseFloat((currentItem.bedtime - nextItem.morning).toFixed(2));
             }
 
-            if (diff !== null) {
-                if (diff >= 0.6) {
+            if (nextDiff !== null) {
+                if (nextDiff >= 0.6) {
                     status = "good";
-                    advice = "✨ 太棒了！昨晚到今早順暢排空了 " + diff + "kg！" + 
-                             (goodFoods.length > 0 ? "妳今天攝取的【" + goodFoods.join('、') + "】是妳的「高效代謝安全餐」，身體非常喜歡！" : "今天的飲食安排對身體十分友善，請繼續保持這個溫柔的節奏。");
-                } else if (diff === 0) {
+                    advice = "✨ 太棒了！這天白天的飲食讓妳在隔天早晨順暢排空了 " + nextDiff + "kg！" + 
+                             (goodFoods.length > 0 ? "其中記錄到的【" + goodFoods.join('、') + "】確實是妳的「高效代謝安全餐」，身體非常喜歡！" : "這樣的日常飲食安排對身體十分友善，請繼續保持。");
+                } else if (nextDiff === 0) {
                     status = "neutral";
-                    advice = "🤍 昨晚與今早的體重完全一樣，身體運作得很平穩。多觀察看看白天的飲食和水分，聽聽身體微小的變化。";
-                } else if (diff < 0.4) {
+                    advice = "🤍 昨晚與隔天清晨的體重完全一樣。這天記下的飲食讓身體運作得很平穩，多觀察看看白天的水分補充，聽聽身體微小的變化。";
+                } else if (nextDiff < 0.4) {
                     status = "burden";
-                    advice = "⏳ 今天的過夜代謝稍微緩慢（僅排空 " + diff + "kg）。" + 
-                             (badFoods.length > 0 ? "看來記錄到的【" + badFoods.join('、') + "】含有較多的鈉或精緻糖，悄悄鎖住了水分。" : "今天的飲食可能對妳目前的消化稍微造成了負擔。") + 
-                             "建議明天白天多喝水排鈉，或吃點香蕉、紅豆水等高鉀食物來加速身體排空。";
+                    advice = "⏳ 這天吃完後，導致隔天清晨的過夜代謝稍微緩慢（僅排空 " + nextDiff + "kg）。" + 
+                             (badFoods.length > 0 ? "看來隨手記下的【" + badFoods.join('、') + "】含有較多的鈉或精緻糖，悄悄在隔天鎖住了水分。" : "這天的飲食內容可能對隔日的消化稍微造成了負擔。") + 
+                             "建議明天白天多喝水排鈉，或吃點香蕉、紅豆水等高鉀食物來幫助身體重新排空。";
                 } else {
                     if (badFoods.length > 0) {
                         status = "burden";
-                        advice = "🌿 雖然過夜排空量在正常範圍（減少 " + diff + "kg），但今天隨手記的【" + badFoods.join('、') + "】屬於隱形負擔食物。如果連續幾天吃，代謝可能會漸漸卡關喔。";
+                        advice = "🌿 雖然隔天早上的排空量在正常範圍（減少 " + nextDiff + "kg），但這天隨手記的【" + badFoods.join('、') + "】屬於隱形負擔食物。如果連續幾天這樣吃，代謝可能會漸漸卡關喔。";
                     } else if (goodFoods.length > 0) {
                         status = "good";
-                        advice = "🌸 身體運作得很平穩（減少 " + diff + "kg）。今天攝取的【" + goodFoods.join('、') + "】給予了身體很好的基礎支撐，繼續傾聽內心的聲音。";
+                        advice = "🌸 隔天身體運作得很平穩（減少 " + nextDiff + "kg）。這天攝取的【" + goodFoods.join('、') + "】給予了身體很好的基礎支撐，繼續傾聽內心的聲音。";
                     } else {
-                        advice = "🤍 昨晚到明早的排空表現很平穩（減少 " + diff + "kg）。明天可以多觀察看看不同的飲食，會對過夜代謝產生什麼有趣的變化。";
+                        advice = "🤍 昨晚到明晨的排空表現很平穩（減少 " + nextDiff + "kg）。可以多觀察看看不同的飲食，對隔天早上的過夜代謝會產生什麼變化。";
                     }
                 }
             } else {
+                // 如果還沒有下一天的數據
                 if (badFoods.length > 0) {
                     status = "neutral";
-                    advice = "⏳ 紀錄已儲存。今天點記了【" + badFoods.join('、') + "】，這類重口味或高糖食物容易引發水腫。等數據補齊後，就能精準揭曉它對妳身體的影響囉！";
+                    advice = "⏳ 這天點記了【" + badFoods.join('、') + "】等容易引發水腫的重口味或高糖食物。等妳輸入「明早的體重」後，就能精準揭曉它對隔日代謝的真實影響囉！";
                 } else if (goodFoods.length > 0) {
                     status = "neutral";
-                    advice = "🌱 捕捉到身體喜歡的原型食材【" + goodFoods.join('、') + "】！等體重數據補齊，就能連連看這道高效代謝餐的真實威力囉。";
+                    advice = "🌱 捕捉到身體喜歡的原型食材【" + goodFoods.join('、') + "】！等明天早上補齊體重數據，就能連連看這道高效代謝餐對隔日排空的真實威力囉。";
                 } else {
-                    advice = "✍️ 紀錄已儲存。記得同時輸入「昨晚」與「今早」的體重，就會跳出精準的代謝分析喔！";
+                    advice = "✍️ 紀錄已儲存。記得在明天補上「今早體重」，系統就會精準分析這天飲食對隔天早上的排空影響喔！";
                 }
             }
 
@@ -312,13 +315,18 @@
                 return;
             }
 
+            // 依時間由新到舊排序顯示
             [...appData].reverse().forEach((item, revIndex) => {
                 const originalIndex = appData.length - 1 - revIndex;
                 
-                const singleDayDiff = (item.bedtime !== null && item.morning !== null) ? (item.bedtime - item.morning) : null;
-                const diffText = singleDayDiff !== null ? ` (當天昨晚至當晨排空: -${singleDayDiff.toFixed(2)} kg)` : '';
+                // 找出該筆資料的「下一天」數據，用來做飲食因果分析
+                const nextItem = appData[originalIndex + 1] || null;
 
-                const insight = generateInsight(item);
+                const singleDayDiff = (item.bedtime !== null && item.morning !== null) ? (item.bedtime - item.morning) : null;
+                const diffText = singleDayDiff !== null ? ` (昨晚至當晨排空: -${singleDayDiff.toFixed(2)} kg)` : '';
+
+                // 🎯 傳入 nextItem，讓分析邏輯改看隔天早上的表現
+                const insight = generateInsight(item, nextItem);
                 
                 let badgeStyle = "background-color: #E2E8F0; color: #475569;";
                 let badgeText = "日常札記";
@@ -330,7 +338,7 @@
                     cardBorderColor = "#B8C0B7";
                 } else if (insight.status === "burden") {
                     badgeStyle = "background-color: #F5EAE6; color: #9C6656;";
-                    badgeText = "⚠️ 身體在負擔";
+                    badgeText = "⚠️ 隔日留負擔";
                     cardBorderColor = "#D4A3A3";
                 }
 
@@ -347,11 +355,11 @@
                     </div>
                     <div class="text-xs space-y-2 leading-relaxed opacity-90 border-b border-stone-200/40 pb-3">
                         <p><strong class="opacity-70 font-medium">⚖️ 體重數據：</strong> 昨晚: ${item.bedtime !== null ? item.bedtime.toFixed(2) : '--'} kg ‧ 今早: ${item.morning !== null ? item.morning.toFixed(2) : '--'} kg <span class="text-[11px] font-medium opacity-60">${diffText}</span></p>
-                        <p><strong class="opacity-70 font-medium">🍳 飲食隨筆：</strong> ${item.diet || '今日未有飲食點心註記'}</p>
+                        <p><strong class="opacity-70 font-medium">🍳 當日飲食：</strong> ${item.diet || '今日未有飲食點心註記'}</p>
                         <p><strong class="opacity-70 font-medium">💭 感受備忘：</strong> ${item.feeling || '今日身體感到平靜'}</p>
                     </div>
                     <div class="mt-3 text-xs leading-relaxed p-2.5 rounded-xl bg-stone-50/50" style="color: #5C5555;">
-                        <span class="font-bold text-[10px] uppercase tracking-wider block mb-1 opacity-60">💡 當日飲食體檢：</span>
+                        <span class="font-bold text-[10px] uppercase tracking-wider block mb-1 opacity-60">💡 隔日代謝體檢 (此日飲食對未來的影響)：</span>
                         ${insight.advice}
                     </div>
                 `;
@@ -389,8 +397,8 @@
                         {
                             label: '昨晚體重',
                             data: bedtimeData,
-                            borderColor: '#B8C0B7',       // 🎯 對調：昨晚改為莫蘭迪綠線
-                            backgroundColor: '#B8C0B7',   // 標籤方塊改為綠色
+                            borderColor: '#B8C0B7',       
+                            backgroundColor: '#B8C0B7',   
                             borderWidth: 2,
                             pointBackgroundColor: '#B8C0B7',
                             pointRadius: isLongRange ? 1 : 2.5,
@@ -400,8 +408,8 @@
                         {
                             label: '今早體重',
                             data: morningData,
-                            borderColor: '#D4A3A3',       // 🎯 對調：今早改為莫蘭迪粉線
-                            backgroundColor: '#D4A3A3',   // 標籤方塊改為粉色
+                            borderColor: '#D4A3A3',       
+                            backgroundColor: '#D4A3A3',   
                             borderWidth: 2,
                             pointBackgroundColor: '#D4A3A3',
                             pointRadius: isLongRange ? 1 : 2.5,
