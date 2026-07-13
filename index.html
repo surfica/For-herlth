@@ -11,7 +11,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- 🌟 精準讀取妳上傳的 icon.png 檔案 🌟 -->
     <link class="apple-touch-icon" href="icon.png">
     <link rel="icon" type="image/png" href="icon.png">
 
@@ -175,7 +174,6 @@
             for (let key in goodKeywords) { if (textToAnalyze.includes(key)) goodFoods.push(goodKeywords[key]); }
             for (let key in badKeywords) { if (textToAnalyze.includes(key)) badFoods.push(badKeywords[key]); }
 
-            // 🎯 修改為：當天的昨晚體重 - 當天的今早體重
             let diff = null;
             if (currentItem.bedtime !== null && currentItem.morning !== null) {
                 diff = parseFloat((currentItem.bedtime - currentItem.morning).toFixed(2));
@@ -186,6 +184,9 @@
                     status = "good";
                     advice = "✨ 太棒了！昨晚到今早順暢排空了 " + diff + "kg！" + 
                              (goodFoods.length > 0 ? "妳今天攝取的【" + goodFoods.join('、') + "】是妳的「高效代謝安全餐」，身體非常喜歡！" : "今天的飲食安排對身體十分友善，請繼續保持這個溫柔的節奏。");
+                } else if (diff === 0) {
+                    status = "neutral";
+                    advice = "🤍 昨晚與今早的體重完全一樣，身體運作得很平穩。多觀察看看白天的飲食和水分，聽聽身體微小的變化。";
                 } else if (diff < 0.4) {
                     status = "burden";
                     advice = "⏳ 今天的過夜代謝稍微緩慢（僅排空 " + diff + "kg）。" + 
@@ -314,8 +315,7 @@
             [...appData].reverse().forEach((item, revIndex) => {
                 const originalIndex = appData.length - 1 - revIndex;
                 
-                // 🎯 這裡同步修改為當天計算
-                const singleDayDiff = (item.bedtime && item.morning) ? (item.bedtime - item.morning) : null;
+                const singleDayDiff = (item.bedtime !== null && item.morning !== null) ? (item.bedtime - item.morning) : null;
                 const diffText = singleDayDiff !== null ? ` (當天昨晚至當晨排空: -${singleDayDiff.toFixed(2)} kg)` : '';
 
                 const insight = generateInsight(item);
@@ -369,11 +369,10 @@
             const bedtimeData = filteredData.map(item => item.bedtime);
             const morningData = filteredData.map(item => item.morning);
             
-            // 🎯 圖表代謝計算同步修改：當天昨晚 - 當天今早
             const diffData = filteredData.map(item => {
                 if (item.bedtime !== null && item.morning !== null) {
                     const diff = item.bedtime - item.morning;
-                    return diff > 0 ? parseFloat(diff.toFixed(2)) : 0;
+                    return parseFloat(diff.toFixed(2)); 
                 }
                 return null;
             });
@@ -390,10 +389,10 @@
                         {
                             label: '昨晚體重',
                             data: bedtimeData,
-                            borderColor: '#D4A3A3', // 🎯 修正為莫蘭迪粉
-                            backgroundColor: 'transparent',
+                            borderColor: '#B8C0B7',       // 🎯 對調：昨晚改為莫蘭迪綠線
+                            backgroundColor: '#B8C0B7',   // 標籤方塊改為綠色
                             borderWidth: 2,
-                            pointBackgroundColor: '#D4A3A3',
+                            pointBackgroundColor: '#B8C0B7',
                             pointRadius: isLongRange ? 1 : 2.5,
                             tension: 0.3,
                             spanGaps: true
@@ -401,10 +400,10 @@
                         {
                             label: '今早體重',
                             data: morningData,
-                            borderColor: '#B8C0B7', // 🎯 修正為莫蘭迪綠
-                            backgroundColor: 'transparent',
+                            borderColor: '#D4A3A3',       // 🎯 對調：今早改為莫蘭迪粉線
+                            backgroundColor: '#D4A3A3',   // 標籤方塊改為粉色
                             borderWidth: 2,
-                            pointBackgroundColor: '#B8C0B7',
+                            pointBackgroundColor: '#D4A3A3',
                             pointRadius: isLongRange ? 1 : 2.5,
                             tension: 0.3,
                             spanGaps: true
@@ -443,7 +442,7 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, ticks: { font: { size: 9 }, color: '#A09696' }, grid: { color: 'rgba(110, 101, 101, 0.03)' } },
+                        y: { ticks: { font: { size: 9 }, color: '#A09696' }, grid: { color: 'rgba(110, 101, 101, 0.03)' } },
                         x: { ticks: { font: { size: 9 }, color: '#A09696', maxTicksLimit: 8 }, grid: { display: false } }
                     }
                 }
