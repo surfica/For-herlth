@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>芸｜智慧體重飲食日記</title>
+    <title>優雅日常｜智慧體重飲食日記</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- 引入 Chart.js -->
@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- 🌟 精準讀取妳上傳的 icon.png 檔案 🌟 -->
-    <link rel="apple-touch-icon" href="icon.png">
+    <link class="apple-touch-icon" href="icon.png">
     <link rel="icon" type="image/png" href="icon.png">
 
     <style>
@@ -71,7 +71,7 @@
             </div>
             <div class="border-t border-stone-200/50 my-1"></div>
             <div>
-                <h2 class="text-xs font-medium tracking-wider opacity-60 mb-2">✨ 過夜代謝水份排空量</h2>
+                <h2 class="text-xs font-medium tracking-wider opacity-60 mb-2">✨ 當日過夜代謝水份排空量</h2>
                 <div class="w-full h-32">
                     <canvas id="diffChart"></canvas>
                 </div>
@@ -150,7 +150,7 @@
         let diffChart = null;
         let currentDisplayRange = 7;
 
-        function generateInsight(currentItem, nextItem) {
+        function generateInsight(currentItem) {
             let goodFoods = [];
             let badFoods = [];
             let advice = "";
@@ -175,20 +175,21 @@
             for (let key in goodKeywords) { if (textToAnalyze.includes(key)) goodFoods.push(goodKeywords[key]); }
             for (let key in badKeywords) { if (textToAnalyze.includes(key)) badFoods.push(badKeywords[key]); }
 
+            // 🎯 修改為：當天的昨晚體重 - 當天的今早體重
             let diff = null;
-            if (currentItem.bedtime !== null && nextItem && nextItem.morning !== null) {
-                diff = parseFloat((currentItem.bedtime - nextItem.morning).toFixed(2));
+            if (currentItem.bedtime !== null && currentItem.morning !== null) {
+                diff = parseFloat((currentItem.bedtime - currentItem.morning).toFixed(2));
             }
 
             if (diff !== null) {
                 if (diff >= 0.6) {
                     status = "good";
-                    advice = "✨ 太棒了！今天的飲食經過一整夜，帶動了高效代謝（昨晚至明早排空了 " + diff + "kg）。" + 
+                    advice = "✨ 太棒了！昨晚到今早順暢排空了 " + diff + "kg！" + 
                              (goodFoods.length > 0 ? "妳今天攝取的【" + goodFoods.join('、') + "】是妳的「高效代謝安全餐」，身體非常喜歡！" : "今天的飲食安排對身體十分友善，請繼續保持這個溫柔的節奏。");
                 } else if (diff < 0.4) {
                     status = "burden";
-                    advice = "⏳ 昨晚到今早的過夜代謝稍微緩慢（僅排空 " + diff + "kg）。" + 
-                             (badFoods.length > 0 ? "看來今天吃進去的【" + badFoods.join('、') + "】含有較多的鈉或精緻糖，在夜裡悄悄鎖住了水分。" : "今天的飲食可能對妳目前的消化稍微造成了負擔。") + 
+                    advice = "⏳ 今天的過夜代謝稍微緩慢（僅排空 " + diff + "kg）。" + 
+                             (badFoods.length > 0 ? "看來記錄到的【" + badFoods.join('、') + "】含有較多的鈉或精緻糖，悄悄鎖住了水分。" : "今天的飲食可能對妳目前的消化稍微造成了負擔。") + 
                              "建議明天白天多喝水排鈉，或吃點香蕉、紅豆水等高鉀食物來加速身體排空。";
                 } else {
                     if (badFoods.length > 0) {
@@ -204,12 +205,12 @@
             } else {
                 if (badFoods.length > 0) {
                     status = "neutral";
-                    advice = "⏳ 紀錄已儲存。今天點記了【" + badFoods.join('、') + "】，這類重口味或高糖食物容易引發水腫。等明天早上補上體重後，我們就能精準揭曉它對妳身體的影響囉！";
+                    advice = "⏳ 紀錄已儲存。今天點記了【" + badFoods.join('、') + "】，這類重口味或高糖食物容易引發水腫。等數據補齊後，就能精準揭曉它對妳身體的影響囉！";
                 } else if (goodFoods.length > 0) {
                     status = "neutral";
-                    advice = "🌱 捕捉到身體喜歡的原型食材【" + goodFoods.join('、') + "】！等明天補上體重數據，就能連連看這道高效代謝餐的真實威力囉。";
+                    advice = "🌱 捕捉到身體喜歡的原型食材【" + goodFoods.join('、') + "】！等體重數據補齊，就能連連看這道高效代謝餐的真實威力囉。";
                 } else {
-                    advice = "✍️ 紀錄已儲存。等明天早上補上體重後，就會跳出今天飲食的精準跨天代謝分析喔！";
+                    advice = "✍️ 紀錄已儲存。記得同時輸入「昨晚」與「今早」的體重，就會跳出精準的代謝分析喔！";
                 }
             }
 
@@ -312,12 +313,12 @@
 
             [...appData].reverse().forEach((item, revIndex) => {
                 const originalIndex = appData.length - 1 - revIndex;
-                const nextItem = appData[originalIndex + 1] || null;
                 
+                // 🎯 這裡同步修改為當天計算
                 const singleDayDiff = (item.bedtime && item.morning) ? (item.bedtime - item.morning) : null;
-                const diffText = singleDayDiff !== null ? ` (昨晚至當晨排空: -${singleDayDiff.toFixed(2)} kg)` : '';
+                const diffText = singleDayDiff !== null ? ` (當天昨晚至當晨排空: -${singleDayDiff.toFixed(2)} kg)` : '';
 
-                const insight = generateInsight(item, nextItem);
+                const insight = generateInsight(item);
                 
                 let badgeStyle = "background-color: #E2E8F0; color: #475569;";
                 let badgeText = "日常札記";
@@ -350,7 +351,7 @@
                         <p><strong class="opacity-70 font-medium">💭 感受備忘：</strong> ${item.feeling || '今日身體感到平靜'}</p>
                     </div>
                     <div class="mt-3 text-xs leading-relaxed p-2.5 rounded-xl bg-stone-50/50" style="color: #5C5555;">
-                        <span class="font-bold text-[10px] uppercase tracking-wider block mb-1 opacity-60">💡 跨天飲食體檢：</span>
+                        <span class="font-bold text-[10px] uppercase tracking-wider block mb-1 opacity-60">💡 當日飲食體檢：</span>
                         ${insight.advice}
                     </div>
                 `;
@@ -368,12 +369,10 @@
             const bedtimeData = filteredData.map(item => item.bedtime);
             const morningData = filteredData.map(item => item.morning);
             
-            const diffData = filteredData.map((item, idx) => {
-                const currentGlobalIdx = appData.findIndex(g => g.date === item.date);
-                const nextGlobalItem = appData[currentGlobalIdx + 1];
-                
-                if (item.bedtime !== null && nextGlobalItem && nextGlobalItem.morning !== null) {
-                    const diff = item.bedtime - nextGlobalItem.morning;
+            // 🎯 圖表代謝計算同步修改：當天昨晚 - 當天今早
+            const diffData = filteredData.map(item => {
+                if (item.bedtime !== null && item.morning !== null) {
+                    const diff = item.bedtime - item.morning;
                     return diff > 0 ? parseFloat(diff.toFixed(2)) : 0;
                 }
                 return null;
@@ -391,7 +390,7 @@
                         {
                             label: '昨晚體重',
                             data: bedtimeData,
-                            borderColor: '#D4A3A3',
+                            borderColor: '#D4A3A3', // 🎯 修正為莫蘭迪粉
                             backgroundColor: 'transparent',
                             borderWidth: 2,
                             pointBackgroundColor: '#D4A3A3',
@@ -402,7 +401,7 @@
                         {
                             label: '今早體重',
                             data: morningData,
-                            borderColor: '#B8C0B7',
+                            borderColor: '#B8C0B7', // 🎯 修正為莫蘭迪綠
                             backgroundColor: 'transparent',
                             borderWidth: 2,
                             pointBackgroundColor: '#B8C0B7',
@@ -430,7 +429,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: '當日飲食之過夜代謝量',
+                        label: '當日過夜代謝量',
                         data: diffData,
                         backgroundColor: 'rgba(212, 163, 163, 0.6)',
                         borderColor: '#D4A3A3',
